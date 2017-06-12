@@ -5,10 +5,10 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 name := "sbthostRoot"
 moduleName := "sbthostRoot"
 
-lazy val sbthost = project
+lazy val nsc = project
   .in(file("sbthost/nsc"))
   .settings(
-    moduleName := "sbthost",
+    moduleName := "sbthost-nsc",
     mergeSettings,
     publishableSettings,
     isFullCrossVersion,
@@ -18,13 +18,23 @@ lazy val sbthost = project
     protobufSettings
   )
 
+lazy val runtime = project
+  .in(file("sbthost/runtime"))
+  .settings(
+    sharedSettings,
+    publishableSettings,
+    moduleName := "sbthost-runtime",
+    libraryDependencies += "org.scalameta" %% "scalameta" % scalametaVersion,
+    description := "Library to patch broken .semanticdb files produced by sbthost-nsc."
+  )
+
 lazy val input = project
   .in(file("sbthost/input"))
   .settings(
     isScala210,
     nonPublishableSettings,
     scalacOptions ++= {
-      val sbthostPlugin = Keys.`package`.in(sbthost, Compile).value
+      val sbthostPlugin = Keys.`package`.in(nsc, Compile).value
       val sbthostPluginPath = sbthostPlugin.getAbsolutePath
       val dummy = "-Jdummy=" + sbthostPlugin.lastModified
       s"-Xplugin:$sbthostPluginPath" ::
@@ -43,7 +53,6 @@ lazy val tests = project
     moduleName := "sbthost-tests",
     scalaVersion := scala212,
     description := "Tests for sbthost",
-    libraryDependencies += "org.scalameta" %% "scalameta" % scalametaVersion,
     test.in(Test) := test.in(Test).dependsOn(compile.in(input, Compile)).value,
     buildInfoPackage := "scala.meta.tests",
     buildInfoKeys := Seq[BuildInfoKey](
@@ -51,6 +60,7 @@ lazy val tests = project
       "sourceroot" -> baseDirectory.in(ThisBuild).value
     )
   )
+  .dependsOn(runtime)
   .enablePlugins(BuildInfoPlugin)
 
 lazy val protobufSettings = Seq(
@@ -114,8 +124,8 @@ lazy val isScala210 = Seq(
 )
 
 lazy val sharedSettings = Def.settings(
-  scalaVersion := scala210,
-  crossScalaVersions := List(scala210),
+  scalaVersion := scala212,
+  crossScalaVersions := List(scala212, scala211),
   organization := "org.scalameta",
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   updateOptions := updateOptions.value.withCachedResolution(true),
