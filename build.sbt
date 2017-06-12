@@ -63,8 +63,6 @@ lazy val protobufSettings = Seq(
   libraryDependencies += "com.trueaccord.scalapb" %% "scalapb-runtime" % scalapbVersion
 )
 
-
-
 lazy val mergeSettings = Def.settings(
   test.in(assembly) := {},
   logLevel.in(assembly) := Level.Error,
@@ -127,7 +125,7 @@ lazy val sharedSettings = Def.settings(
 lazy val nonPublishableSettings = Seq(
   publishArtifact in (Compile, packageDoc) := false,
   publishArtifact in packageDoc := false,
-  sources in (Compile,doc) := Seq.empty,
+  sources in (Compile, doc) := Seq.empty,
   publishArtifact := false,
   publish := {}
 )

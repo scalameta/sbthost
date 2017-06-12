@@ -57,10 +57,11 @@ class SbthostPlugin(val global: Global) extends Plugin {
       case s: StoreReporter =>
       case s =>
         val newReporter = new StoreReporter {
-          override def info0(pos: Position,
-                             msg: String,
-                             severity: Severity,
-                             force: Boolean): Unit = {
+          override def info0(
+              pos: Position,
+              msg: String,
+              severity: Severity,
+              force: Boolean): Unit = {
             super.info0(pos, msg, severity, force)
             severity match {
               case INFO => s.info(pos, msg, force)
@@ -132,8 +133,11 @@ class SbthostPlugin(val global: Global) extends Plugin {
         else "L" + sym.fullName.replace(".", "/") + ";"
       }
       val MethodType(params, ret) = sym.info.erasure
-      val jvmRet = if (!sym.isConstructor) ret else definitions.UnitClass.toType
-      "(" + params.map(param => encode(param.info)).mkString("") + ")" + encode(jvmRet)
+      val jvmRet =
+        if (!sym.isConstructor) ret else definitions.UnitClass.toType
+      "(" + params
+        .map(param => encode(param.info))
+        .mkString("") + ")" + encode(jvmRet)
     }
     def prettySymbol(symbol: Symbol): String = {
       val buffer = new StringBuilder
@@ -155,7 +159,7 @@ class SbthostPlugin(val global: Global) extends Plugin {
             val pretty = prettySymbol(tree.symbol)
             // Hack and hacks, this should not be necessary, just trying to get something running.
             if (pretty.contains("<") ||
-                pretty.contains(">")) {
+              pretty.contains(">")) {
               // nothing
             } else {
               buffer += s.ResolvedName(Some(range), pretty)
