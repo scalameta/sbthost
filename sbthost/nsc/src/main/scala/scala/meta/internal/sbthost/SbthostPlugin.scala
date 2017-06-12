@@ -159,7 +159,7 @@ class SbthostPlugin(val global: Global) extends Plugin {
             val pretty = prettySymbol(tree.symbol)
             // Hack and hacks, this should not be necessary, just trying to get something running.
             if (pretty.contains("<") ||
-              pretty.contains(">")) {
+                pretty.contains(">")) {
               // nothing
             } else {
               buffer += s.ResolvedName(Some(range), pretty)
