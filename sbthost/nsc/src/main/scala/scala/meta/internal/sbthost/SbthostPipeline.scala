@@ -43,7 +43,7 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
     override def newPhase(prev: Phase) = new StdPhase(prev) {
       def apply(unit: g.CompilationUnit): Unit = {
         val names = ListBuffer.newBuilder[s.ResolvedName]
-        val denots = ListBuffer.newBuilder[s.SymbolDenotation]
+        val denots = mutable.Map.empty[String, s.SymbolDenotation]
         def getNames(): Unit = {
           object traverser extends g.Traverser {
             def isValidSymbol(symbol: g.Symbol) =
@@ -54,11 +54,13 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
                   isValidSymbol(tree.symbol) &&
                   isValidSymbol(tree.symbol.owner)) {
                 val symbol = tree.symbol.toSemantic
+                val symbolSyntax = symbol.syntax
                 val range = s.Range(tree.pos.point, tree.pos.point)
-                names += s.ResolvedName(Some(range), symbol.syntax)
-
-                val denot = tree.symbol.toDenotation
-                denots += s.SymbolDenotation(symbol.syntax, Some(denot))
+                names += s.ResolvedName(Some(range), symbolSyntax)
+                if (!denots.contains(symbolSyntax)) {
+                  val denot = tree.symbol.toDenotation
+                  denots(symbolSyntax) = s.SymbolDenotation(symbol.syntax, Some(denot))
+                }
               }
               super.traverse(tree)
             }
@@ -79,7 +81,7 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
           dialect = "Scala210", // TODO: not hardcode
           names = names.result(),
           messages = getMessages(unit.source).toSeq,
-          denotations = denots.result(),
+          denotations = denots.result().values.toSeq,
           sugars = Nil
         )
         val semanticdbOutFile = config.semanticdbPath(filename)
