@@ -40,30 +40,32 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
           //          global.reporter.warning(NoPosition, s"Unknown reporter $els")
           mutable.LinkedHashSet.empty
       }
-    def getNames(unit: g.CompilationUnit): Seq[s.ResolvedName] = {
-      val buffer = ListBuffer.newBuilder[s.ResolvedName]
-      object traverser extends g.Traverser {
-
-        def isValidSymbol(symbol: g.Symbol) =
-          symbol.ne(null) && symbol != g.NoSymbol
-
-        override def traverse(tree: g.Tree): Unit = {
-          if (tree.pos.isDefined &&
-              tree.hasSymbol &&
-              isValidSymbol(tree.symbol) &&
-              isValidSymbol(tree.symbol.owner)) {
-            val symbol = tree.symbol.toSemantic
-            val range = s.Range(tree.pos.point, tree.pos.point)
-            buffer += s.ResolvedName(Some(range), symbol.syntax)
-          }
-          super.traverse(tree)
-        }
-      }
-      traverser(unit.body)
-      buffer.result()
-    }
     override def newPhase(prev: Phase) = new StdPhase(prev) {
       def apply(unit: g.CompilationUnit): Unit = {
+        val names = ListBuffer.newBuilder[s.ResolvedName]
+        val denots = ListBuffer.newBuilder[s.SymbolDenotation]
+        def getNames(): Unit = {
+          object traverser extends g.Traverser {
+            def isValidSymbol(symbol: g.Symbol) =
+              symbol.ne(null) && symbol != g.NoSymbol
+            override def traverse(tree: g.Tree): Unit = {
+              if (tree.pos.isDefined &&
+                  tree.hasSymbol &&
+                  isValidSymbol(tree.symbol) &&
+                  isValidSymbol(tree.symbol.owner)) {
+                val symbol = tree.symbol.toSemantic
+                val range = s.Range(tree.pos.point, tree.pos.point)
+                names += s.ResolvedName(Some(range), symbol.syntax)
+
+                val denot = tree.symbol.toDenotation
+                denots += s.SymbolDenotation(symbol.syntax, Some(denot))
+              }
+              super.traverse(tree)
+            }
+          }
+          traverser(unit.body)
+        }
+        getNames()
         val sourcePath = unit.source.file match {
           case f: VirtualFile =>
             Paths.get(f.path)
@@ -75,9 +77,9 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
           filename = filename.toString,
           contents = unit.source.content.mkString,
           dialect = "Scala210", // TODO: not hardcode
-          names = getNames(unit),
+          names = names.result(),
           messages = getMessages(unit.source).toSeq,
-          denotations = Nil,
+          denotations = denots.result(),
           sugars = Nil
         )
         val semanticdbOutFile = config.semanticdbPath(filename)

@@ -6,6 +6,7 @@ trait DatabaseOps
     extends SymbolOps
     with ConfigOps
     with InputOps
+    with DenotationOps
     with HijackReporterOps
     with ReflectionToolkit {
   val global: Global
