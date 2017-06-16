@@ -1,2 +1,2 @@
-> compile
-> copyAll
+# `project` does nothing, just spawns sbt to load the build
+> project

@@ -52,9 +52,9 @@ lazy val sbtTests = project
   .in(file("sbthost/sbt-tests"))
   .settings(
     nonPublishableSettings,
-    moduleName := "sbt-tests",
+    moduleName := "sbthost-sbt-tests",
     scalaVersion := scala210,
-    description := "Sbt tests for sbthost",
+    description := "Tests for sbthost that check semantic generation for sbt files.",
     scriptedSettings,
     scriptedBufferLog := false,
     scalacPropertiesFile := target.value / "sbthost.properties",
@@ -80,7 +80,11 @@ lazy val tests = project
     moduleName := "sbthost-tests",
     scalaVersion := scala212,
     description := "Tests for sbthost",
-    test.in(Test) := test.in(Test).dependsOn(compile.in(input, Compile)).value,
+    test.in(Test) := test
+      .in(Test)
+      .dependsOn(compile.in(input, Compile))
+      .dependsOn(scripted.in(sbtTests).toTask(""))
+      .value,
     buildInfoPackage := "scala.meta.tests",
     buildInfoKeys := Seq[BuildInfoKey](
       "targetroot" -> classDirectory.in(input, Compile).value,

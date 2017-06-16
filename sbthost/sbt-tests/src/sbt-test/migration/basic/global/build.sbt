@@ -18,13 +18,18 @@ scalacOptions := {
 }
 
 initialize := {
-  import scala.collection.JavaConversions._
+  // Note that this is a hook to copy semanticdb generated in the metabuild after it's been loaded
   Option(sbtHostProperties.getProperty("target")) match {
-    case Some(targetDir) =>
-      val allDbs = (baseDirectory.value ** "*.semanticdb").get
-      val allFilepaths = allDbs.map(_.getAbsolutePath)
-      sLog.value.info(s"Copying the db files to the target directory:\n${allFilepaths}.")
-      IO.copy(allDbs.map(db => db -> (new File(targetDir) / db.getName)))
+    case Some(targetClassesDir) =>
+      val logger = sLog.value
+      val target = new File(targetClassesDir)
+      val toCopy = (classDirectory in Compile).value
+      val allDbs = (toCopy ** "*.semanticdb").get.map(_.getAbsolutePath)
+      if (allDbs.nonEmpty) {
+        logger.info(s"The following db files were found: ${allDbs.mkString(",")}")
+        logger.info(s"Copying them to ${target.getAbsolutePath}.")
+        IO.copyDirectory(toCopy, target, overwrite = true)
+      }
     case None => sys.error(s"Missing 'target' system property in $configFilepath")
   }
 }
