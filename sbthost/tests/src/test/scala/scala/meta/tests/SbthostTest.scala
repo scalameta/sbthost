@@ -11,15 +11,6 @@ abstract class SbthostTest(expectedEntryPath: RelativePath, expectedSyntax: Stri
   def preProcessSyntax(syntax: String): String = syntax
   def optionalDialect: Option[Dialect] = None
 
-  // Reimplement mirror.sources to inject our own dialect if defined
-  def sources(mirror: Mirror): Seq[Source] = {
-    mirror.database.entries.map {
-      case (input, attrs) =>
-        val preferredDialect = optionalDialect.getOrElse(attrs.dialect)
-        preferredDialect(input).parse[Source].get
-    }
-  }
-
   test(expectedEntryPath.toString) {
     val entry = TestDatabase.entries
       .getOrElse(expectedEntryPath, sys.error(s"Missing entry for $expectedEntryPath"))
@@ -33,7 +24,7 @@ abstract class SbthostTest(expectedEntryPath: RelativePath, expectedSyntax: Stri
     val syntax = mirror.database.toString()
     assert(preProcessSyntax(syntax.trim) == expectedSyntax.trim)
 
-    sources(mirror).foreach { source =>
+    mirror.sources.foreach { source =>
       source.collect {
         case name: Term.Name => mirror.names(name.pos) // error if not found
       }
@@ -88,7 +79,7 @@ class SbtFileTest
       s"""build.sbt
          |---------
          |Dialect:
-         |Scala210
+         |Sbt0137
          |
          |Names:
          |[0..12): organization => _root_._empty_.
