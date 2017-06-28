@@ -74,11 +74,14 @@ trait SbthostPipeline extends DatabaseOps { self: SbthostPlugin =>
           case els =>
             Paths.get(els.file.getAbsoluteFile.toURI)
         }
+        // Select Sbt0137 dialect for scala sources extracted from sbt files
+        val detectedDialect =
+          if (g.getClass.getName.contains("sbt.compiler.Eval")) "Sbt0137" else "Scala210"
         val filename = config.relativePath(sourcePath)
         val attributes = s.Attributes(
           filename = filename.toString,
           contents = unit.source.content.mkString,
-          dialect = "Scala210", // TODO: not hardcode
+          dialect = detectedDialect,
           names = names.result(),
           messages = getMessages(unit.source).toSeq,
           denotations = denots.result().values.toSeq,

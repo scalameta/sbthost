@@ -1,6 +1,7 @@
 package scala.meta.internal.sbthost
 
 import java.nio.file.Path
+
 import scala.meta.internal.{sbthost => m}
 import scala.reflect.internal.util.NoPosition
 
